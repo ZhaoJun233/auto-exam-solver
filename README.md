@@ -12,84 +12,43 @@
 
 ---
 
-## 🤖 Agent 一键安装（给 AI 助手的自然语言指令）
+## 🤖 给 AI 助手的安装说明
 
-如果你是一个 AI 编程助手（如 Claude Code、Cursor、Copilot 等），请阅读以下指令并自动完成安装。这些指令用自然语言写成，方便你理解和执行。
+如果你是一个 AI 编程助手（Claude Code、Cursor、Copilot 等），请阅读以下说明，帮用户完成本工具的安装。
 
-### 安装指令
+### 你需要做的事
 
-请在项目根目录完成以下环境检测和安装。**先检查已有环境，再决定需要执行哪些步骤，避免重复安装。**
+这个项目是一个 Python 工具，它依赖两个东西才能跑起来：
 
-**第 0 步 — 环境检测（必做）**
+1. **两个 Python 第三方库**：playwright 和 websocket-client
+2. **一个 Chromium 浏览器**：由 playwright 管理，需要单独下载
 
-在安装前，先检查以下三项是否已经就绪：
+另外，项目本身需要通过 pip 安装到系统里，这样用户才能在任意位置直接敲命令使用它。
 
-- 检查 Python 依赖：运行 `pip show playwright` 和 `pip show websocket-client`，如果两者都显示版本信息，说明依赖已安装
-- 检查浏览器内核：运行 `playwright install --dry-run chromium` 或检查 Chromium 浏览器二进制是否已存在，如果已安装则跳过
-- 检查本项目：运行 `pip show auto-exam-solver`，如果显示版本信息（2.0.0），说明本项目已安装
+### 安装前先看一眼
 
-根据检测结果，仅执行缺失的步骤。
+动手装之前，先瞅瞅这三样东西是不是已经在了。pip 和 playwright 都有办法检查一个包或浏览器装没装，查一下就知道了。已经有的就别重复装了，省时间。
 
-**第 1 步 — 安装 Python 依赖（仅当缺失时）**
+### 缺啥补啥
 
-如果上一步检测到 `playwright` 或 `websocket-client` 未安装，用 pip 安装这两个包。已安装的包会自动跳过，所以也可以直接执行 `pip install playwright websocket-client`，pip 会智能处理。
+查完之后，缺哪个装哪个：
 
-**第 2 步 — 安装浏览器内核（仅当缺失时）**
+- 缺 Python 库 → 用 pip 把 playwright 和 websocket-client 装上
+- 缺浏览器 → 让 playwright 把 Chromium 下载下来
+- 缺本项目 → 在项目根目录用 pip 的开发模式把当前目录装上去
 
-如果检测到 Chromium 浏览器尚未安装，运行 `playwright install chromium`。如果已存在则跳过此步。
+如果三样都缺，按顺序全装；如果都有了，什么都不用做，直接跳到下一步。
 
-**第 3 步 — 安装本项目（仅当缺失时）**
+> **不用担心装重了**：pip 遇到已安装的包会自动跳过，playwright 遇到已下载的浏览器也不会重复下载。所以如果你懒得查，直接全量执行安装命令也行，不会出问题。
 
-如果 `pip show auto-exam-solver` 未显示版本信息，在项目根目录执行 `pip install -e .` 以开发模式安装。安装完成后 `auto-exam-solver` 和 `auto-exam-browser` 两个命令即可在任意路径下使用。
+### 装好之后
 
-**总结**
+装完之后，用户电脑上会多出两个命令：
 
-以上三步的理想执行路径：
-- 全新环境：依次执行依赖安装 → 浏览器安装 → 项目安装
-- 依赖已就绪、项目未装：只需执行 `pip install -e .`
-- 全部已就绪：无需任何安装，直接使用 `auto-exam-browser` 和 `auto-exam-solver` 命令
-- 不确定时：直接执行 `pip install playwright websocket-client && playwright install chromium && pip install -e .`，pip 和 Playwright 会自动跳过已满足的部分
+- `auto-exam-browser` — 负责管理 Chrome 浏览器（启动调试模式、查看连接状态、导出 Cookie 等）
+- `auto-exam-solver` — 负责答题（连接浏览器、识别题目、作答、交卷）
 
-### 可用的命令行工具
-
-安装完成后，系统中会多出两个全局命令：
-
-- `auto-exam-browser` — 浏览器管理工具，子命令包括：
-  - `start`：关闭当前 Chrome 并带调试端口重启（端口 9222）
-  - `connect`：检查 CDP 连接状态，列出已打开的页面
-  - `cookies`：导出浏览器 Cookie 为 JSON 格式
-  - `restart`：仅重启 Chrome，不重新复制用户配置
-
-- `auto-exam-solver` — 答题引擎，主要参数：
-  - `--cdp http://localhost:9222` 指定 Chrome DevTools Protocol 连接地址
-  - `--url <考试页面URL>` 直接打开目标考试页面
-  - `--interactive` 开启交互模式，逐题询问答案
-  - `--probe-only` 仅侦查页面结构，不实际答题
-  - `--questions-file result.json` 将提取到的题目保存为 JSON 文件
-  - `--cookies cookies.json` 使用已保存的 Cookie 文件新建浏览器会话
-
-也可以用 `python -m auto_exam_solver solver` 和 `python -m auto_exam_solver browser` 通过模块方式调用。
-
-### Agent 作为 Python 库调用
-
-如果需要更灵活的控制，可以直接 import 本包的核心 API：
-
-```python
-import asyncio
-from auto_exam_solver import probe_page, extract_questions, solve_exam
-
-# 连接 CDP 浏览器 → 侦查页面 → 提取题目 → 作答
-async def auto_solve():
-    from playwright.async_api import async_playwright
-    async with async_playwright() as p:
-        browser = await p.chromium.connect_over_cdp("http://localhost:9222")
-        page = browser.contexts[0].pages[0]
-        info = await probe_page(page)
-        questions = await extract_questions(page, info.framework)
-        await solve_exam(page, questions, info, interactive=True)
-
-asyncio.run(auto_solve())
-```
+也可以用 `python -m auto_exam_solver` 的方式调用，效果一样。
 
 ---
 

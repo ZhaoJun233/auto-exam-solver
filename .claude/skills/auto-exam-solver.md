@@ -14,27 +14,15 @@ triggers:
 
 # 通用在线考试自动答题
 
-## 安装（给 AI 助手的自然语言指令）
+## 安装说明（给 AI 助手看）
 
-请按以下指引完成环境搭建。**先检测已有环境，再按需安装，避免浪费时间重复安装已存在的组件。**
+本工具依赖三样东西：两个 Python 库（playwright、websocket-client）、一个 Chromium 浏览器内核、以及项目本身通过 pip 安装。
 
-**第 0 步 — 环境检测（必做，先于安装）**：
+**动手前先检查**：看看这三样是不是已经装好了。pip 和 playwright 都有办法查，别盲目重装。
 
-在做任何安装操作之前，先检查以下三项：
+**缺哪个装哪个**：缺 Python 库就用 pip 装，缺浏览器就让 playwright 下载，缺项目本身就在根目录 pip install -e .。如果都有了就跳过。注意 pip 遇到已有的包会自动跳过，playwright 也是，所以懒得检查直接全量执行也不会出事。
 
-- Python 依赖：执行 `pip show playwright` 和 `pip show websocket-client`，观察是否已安装
-- 浏览器内核：执行 `playwright install --dry-run chromium` 或检查 Chromium 浏览器二进制是否存在
-- 本项目：执行 `pip show auto-exam-solver`，观察是否显示版本号为 2.0.0
-
-根据检测结果，仅安装缺失的部分。
-
-**第 1 步 — Python 依赖（按需）**：如果 playwright 或 websocket-client 缺失，用 pip 安装。如果已存在，跳过。
-
-**第 2 步 — 浏览器内核（按需）**：如果 Chromium 未安装，执行 `playwright install chromium`。已安装则跳过。
-
-**第 3 步 — 本项目（按需）**：如果 `auto-exam-solver` 未在 pip 列表中，在项目根目录执行 `pip install -e .` 进行开发模式安装。
-
-**总结**：全新环境三步全做；依赖已有、项目未装则只做第 3 步；全部已就绪则直接使用命令行工具。不确定状态时直接执行全部命令，pip 和 Playwright 会自动跳过已完成的部分。
+**装好后**：命令行会多出 `auto-exam-browser`（浏览器管理）和 `auto-exam-solver`（答题引擎）两个工具。也可以用 `python -m auto_exam_solver` 代替。如果只想当 Python 库用，直接 `from auto_exam_solver import probe_page, extract_questions, solve_exam` 即可。
 
 **运行方式**：
 
