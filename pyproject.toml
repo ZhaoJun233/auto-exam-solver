@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto-exam-solver"
+version = "2.0.0"
+description = "通用在线考试/作业自动答题助手 — 支持各类教育平台，自适应 Vue/React/原生 HTML"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "auto-exam-solver contributors"},
+]
+keywords = ["exam", "automation", "playwright", "education", "cdp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    "playwright>=1.40",
+    "websocket-client>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
+
+[project.scripts]
+auto-exam-solver = "auto_exam_solver.solver:entry_point"
+auto-exam-browser = "auto_exam_solver.browser_setup:main"
+
+[tool.setuptools.packages.find]
+include = ["auto_exam_solver*"]
+
+[tool.setuptools.package-data]
+auto_exam_solver = ["py.typed"]

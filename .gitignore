@@ -1,6 +1,9 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.egg
+dist/
+build/
 C:/Temp/chrome-debug-profile/
 node_modules/
 .env

@@ -2,14 +2,17 @@
 通用考试自动作答引擎。
 
 Usage:
-    # 方式 1: CDP 连接已有 Chrome
-    python solver.py --cdp http://localhost:9222 --url "https://xxx.com/exam/123"
+    # 方式 1: 通过命令行工具（pip install 后）
+    auto-exam-solver --cdp http://localhost:9222 --interactive
 
-    # 方式 2: 新建 Playwright 浏览器（需 Cookie JSON）
-    python solver.py --cookies cookies.json --url "https://xxx.com/exam/123"
+    # 方式 2: 作为 Python 模块
+    python -m auto_exam_solver solver --cdp http://localhost:9222 --interactive
 
-    # 方式 3: 交互模式（逐步确认）
-    python solver.py --cdp http://localhost:9222 --interactive
+    # 方式 3: CDP 连接已有 Chrome
+    python -m auto_exam_solver.solver --cdp http://localhost:9222 --url "https://xxx.com/exam/123"
+
+    # 方式 4: 新建 Playwright 浏览器（需 Cookie JSON）
+    python -m auto_exam_solver.solver --cookies cookies.json --url "https://xxx.com/exam/123"
 """
 
 import asyncio
@@ -20,7 +23,7 @@ from dataclasses import asdict
 
 from playwright.async_api import async_playwright, Page
 
-from page_prober import (
+from .page_prober import (
     probe_page, extract_questions, Question, PageInfo,
     RADIO_SELECTORS, CHECKBOX_SELECTORS,
     CARD_NUMBER_SELECTORS, NEXT_BTN_SELECTORS,
@@ -321,6 +324,11 @@ async def main():
             print("\n[INFO] 操作完成，浏览器保持打开")
             return
         await browser.close()
+
+
+def entry_point():
+    """console_scripts entry point (sync wrapper for async main)."""
+    asyncio.run(main())
 
 
 if __name__ == "__main__":
