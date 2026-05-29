@@ -14,41 +14,49 @@
 
 ## 🤖 给 AI 助手的安装说明
 
-如果你是一个 AI 编程助手（Claude Code、Cursor、Copilot 等），请阅读以下说明，帮用户完成本工具的安装。
+如果你是一个 AI 编程助手（Claude Code、Codex、Cursor、Copilot 等），请阅读以下说明，把本项目作为 skill 安装到你的平台上，让它能被平台识别和调用。
 
-### 你需要做的事
+### 这是什么
 
-这个项目是一个 Python 工具，它依赖两个东西才能跑起来：
+本项目本质上是一个 **skill 插件**——提供了 Python 答题脚本 + skill 定义文件。安装的目标是让平台认识这个 skill，并且 skill 引用的脚本真的能跑。
 
-1. **两个 Python 第三方库**：playwright 和 websocket-client
-2. **一个 Chromium 浏览器**：由 playwright 管理，需要单独下载
+### 第一步：让平台识别这个 skill
 
-另外，项目本身需要通过 pip 安装到系统里，这样用户才能在任意位置直接敲命令使用它。
+这个仓库里的 `.claude/skills/auto-exam-solver.md` 就是 skill 的身份文件，里面用 YAML 写了 skill 名称、触发条件、依赖的脚本列表。你需要把它放到平台能发现的地方：
+
+- **Claude Code**：skill 定义文件放在项目的 `.claude/skills/` 目录下就会自动识别。如果你希望在任意项目中都能用（全局 skill），把它放到用户目录下的 Claude 全局 skills 目录里。此外这个文件里 `scripts` 字段列出的三个 Python 脚本，必须放在和 skill 文件同目录的 `auto-exam-solver/` 子目录下，或者用本项目 `auto_exam_solver/` 包里的版本（pip 装完就能被 import）。
+- **Codex（OpenAI Codex CLI）**：Codex 识别 skill 的逻辑类似，把 skill 定义文件放到 Codex 的配置目录下，并确保脚本路径可访问。
+- **其他平台**：原理一样——把 skill 定义文件放到该平台约定的 skills 目录，脚本路径指向能运行的位置。
+
+> 如果用户是直接 clone 这个仓库并在仓库目录里打开 Claude Code，skill 就已经在正确位置了（`.claude/skills/` 就在项目根目录下），你什么都不用挪。
+
+### 第二步：让 skill 的脚本能跑
+
+Skill 文件里声明了三个 Python 脚本：`browser_setup.py`、`page_prober.py`、`solver.py`。它们需要两样东西才能跑：
+
+- **Python 依赖**：playwright 和 websocket-client 这两个第三方库
+- **Chromium 浏览器**：由 playwright 管理，需要单独下载
+
+另外，最好用 pip 以开发模式安装本项目（`pip install -e .`），这样脚本可以在任意路径被调用，skill 和命令行工具都能正常工作。
 
 ### 安装前先看一眼
 
-动手装之前，先瞅瞅这三样东西是不是已经在了。pip 和 playwright 都有办法检查一个包或浏览器装没装，查一下就知道了。已经有的就别重复装了，省时间。
+动手前，检查 Python 库装没装、浏览器下没下、本项目装没装。pip 和 playwright 都自带检查方法。已经有就别重复搞。
 
 ### 缺啥补啥
 
-查完之后，缺哪个装哪个：
+查完只装缺失的：
+- 缺库 → pip 装，缺浏览器 → playwright 下载，缺项目本体 → pip 开发模式安装
+- 全有了就跳过
+- 懒得查直接全量跑也行，pip 和 playwright 遇到重复会自动跳过
 
-- 缺 Python 库 → 用 pip 把 playwright 和 websocket-client 装上
-- 缺浏览器 → 让 playwright 把 Chromium 下载下来
-- 缺本项目 → 在项目根目录用 pip 的开发模式把当前目录装上去
+### 验证装好了没
 
-如果三样都缺，按顺序全装；如果都有了，什么都不用做，直接跳到下一步。
+装完之后确认两件事：
+- 在终端跑一下 `auto-exam-browser` 或 `python -m auto_exam_solver browser`，有正常输出就是装好了
+- 在平台里触发 skill（比如对 Claude Code 说"帮我做这个考试题"），看 skill 是否能被唤起
 
-> **不用担心装重了**：pip 遇到已安装的包会自动跳过，playwright 遇到已下载的浏览器也不会重复下载。所以如果你懒得查，直接全量执行安装命令也行，不会出问题。
-
-### 装好之后
-
-装完之后，用户电脑上会多出两个命令：
-
-- `auto-exam-browser` — 负责管理 Chrome 浏览器（启动调试模式、查看连接状态、导出 Cookie 等）
-- `auto-exam-solver` — 负责答题（连接浏览器、识别题目、作答、交卷）
-
-也可以用 `python -m auto_exam_solver` 的方式调用，效果一样。
+如果平台能识别 skill 且脚本能跑，安装就完成了。
 
 ---
 

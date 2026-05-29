@@ -16,13 +16,13 @@ triggers:
 
 ## 安装说明（给 AI 助手看）
 
-本工具依赖三样东西：两个 Python 库（playwright、websocket-client）、一个 Chromium 浏览器内核、以及项目本身通过 pip 安装。
+本项目是一个 skill 插件，需要被安装到 Claude Code / Codex 等平台的 skills 目录中才能被识别。
 
-**动手前先检查**：看看这三样是不是已经装好了。pip 和 playwright 都有办法查，别盲目重装。
+**让平台识别 skill**：这个文件（`auto-exam-solver.md`）本身就是 skill 定义，放在平台的 skills 目录下即可。Claude Code 认 `.claude/skills/`，Codex 认其约定的配置目录。如果用户是在项目根目录打开的平台，这个文件已经在正确位置了。
 
-**缺哪个装哪个**：缺 Python 库就用 pip 装，缺浏览器就让 playwright 下载，缺项目本身就在根目录 pip install -e .。如果都有了就跳过。注意 pip 遇到已有的包会自动跳过，playwright 也是，所以懒得检查直接全量执行也不会出事。
+**让脚本能跑**：skill 依赖三个 Python 脚本和两个第三方库（playwright、websocket-client），还需要 playwright 下载 Chromium 浏览器。建议先用 pip 检查已有环境，缺啥装啥。最后用 `pip install -e .` 把项目本体装上，skill 引用的 Python 脚本就能被系统找到。
 
-**装好后**：命令行会多出 `auto-exam-browser`（浏览器管理）和 `auto-exam-solver`（答题引擎）两个工具。也可以用 `python -m auto_exam_solver` 代替。如果只想当 Python 库用，直接 `from auto_exam_solver import probe_page, extract_questions, solve_exam` 即可。
+**验证**：装完跑一下 `auto-exam-browser` 有输出，然后在平台触发 skill（如说"帮我答题"），能唤起就成功了。
 
 **运行方式**：
 
