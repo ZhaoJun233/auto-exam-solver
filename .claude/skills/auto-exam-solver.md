@@ -16,15 +16,25 @@ triggers:
 
 ## 安装（给 AI 助手的自然语言指令）
 
-请按以下指引完成环境搭建。以下指令用自然语言描述，便于 AI 助手理解和执行。
+请按以下指引完成环境搭建。**先检测已有环境，再按需安装，避免浪费时间重复安装已存在的组件。**
 
-**安装步骤**：
+**第 0 步 — 环境检测（必做，先于安装）**：
 
-1. 用 pip 安装 `playwright` 和 `websocket-client` 两个 Python 依赖包
-2. 运行 Playwright 自带的 `install chromium` 命令来安装 Chromium 浏览器内核
-3. 在项目根目录用 `pip install -e .` 以开发模式安装本项目。安装完成后命令行中会有两个新命令：`auto-exam-browser` 和 `auto-exam-solver`
+在做任何安装操作之前，先检查以下三项：
 
-以上三步可以合并执行，也可以分步执行。
+- Python 依赖：执行 `pip show playwright` 和 `pip show websocket-client`，观察是否已安装
+- 浏览器内核：执行 `playwright install --dry-run chromium` 或检查 Chromium 浏览器二进制是否存在
+- 本项目：执行 `pip show auto-exam-solver`，观察是否显示版本号为 2.0.0
+
+根据检测结果，仅安装缺失的部分。
+
+**第 1 步 — Python 依赖（按需）**：如果 playwright 或 websocket-client 缺失，用 pip 安装。如果已存在，跳过。
+
+**第 2 步 — 浏览器内核（按需）**：如果 Chromium 未安装，执行 `playwright install chromium`。已安装则跳过。
+
+**第 3 步 — 本项目（按需）**：如果 `auto-exam-solver` 未在 pip 列表中，在项目根目录执行 `pip install -e .` 进行开发模式安装。
+
+**总结**：全新环境三步全做；依赖已有、项目未装则只做第 3 步；全部已就绪则直接使用命令行工具。不确定状态时直接执行全部命令，pip 和 Playwright 会自动跳过已完成的部分。
 
 **运行方式**：
 
