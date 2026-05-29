@@ -14,21 +14,25 @@
 
 ## 🤖 给 AI 助手的安装说明
 
-如果你是一个 AI 编程助手（Claude Code、Codex、Cursor、Copilot 等），请阅读以下说明，把本项目作为 skill 安装到你的平台上，让它能被平台识别和调用。
+如果你是一个 AI 编程助手（Claude Code、Codex、Cursor、Copilot 等），请阅读以下说明，把本项目作为 skill 安装到本设备的**全局 agent 配置目录**（而非本项目目录），让它在所有项目中都能被平台识别和调用。
 
 ### 这是什么
 
-本项目本质上是一个 **skill 插件**——提供了 Python 答题脚本 + skill 定义文件。安装的目标是让平台认识这个 skill，并且 skill 引用的脚本真的能跑。
+本项目本质上是一个 **skill 插件**——提供了 Python 答题脚本 + skill 定义文件。安装的目标是让平台在设备级别认识这个 skill，并且 skill 引用的脚本真的能跑。
 
-### 第一步：让平台识别这个 skill
+### 关键原则：安装到全局目录，不是项目目录
 
-这个仓库里的 `.claude/skills/auto-exam-solver.md` 就是 skill 的身份文件，里面用 YAML 写了 skill 名称、触发条件、依赖的脚本列表。你需要把它放到平台能发现的地方：
+本项目自带的 `.claude/skills/` 目录只是 skill 定义的**来源**。安装时，不要把用户的项目目录当成安装目标——你要把 skill 文件复制到平台在**本设备上的全局 agent 配置目录**。这样用户在任何项目中都能唤起这个 skill，而不需要每个项目都拷一份。
 
-- **Claude Code**：skill 定义文件放在项目的 `.claude/skills/` 目录下就会自动识别。如果你希望在任意项目中都能用（全局 skill），把它放到用户目录下的 Claude 全局 skills 目录里。此外这个文件里 `scripts` 字段列出的三个 Python 脚本，必须放在和 skill 文件同目录的 `auto-exam-solver/` 子目录下，或者用本项目 `auto_exam_solver/` 包里的版本（pip 装完就能被 import）。
-- **Codex（OpenAI Codex CLI）**：Codex 识别 skill 的逻辑类似，把 skill 定义文件放到 Codex 的配置目录下，并确保脚本路径可访问。
-- **其他平台**：原理一样——把 skill 定义文件放到该平台约定的 skills 目录，脚本路径指向能运行的位置。
+### 第一步：把 skill 定义放到平台全局目录
 
-> 如果用户是直接 clone 这个仓库并在仓库目录里打开 Claude Code，skill 就已经在正确位置了（`.claude/skills/` 就在项目根目录下），你什么都不用挪。
+`auto-exam-solver.md`（位于本项目 `.claude/skills/` 下）是 skill 的身份文件，用 YAML 写了 skill 名称、触发条件、依赖的脚本列表。你需要把它放到平台能全局发现的地方：
+
+- **Claude Code**：复制到 `~/.claude/skills/`（用户级全局 skills 目录）。Claude Code 启动时会自动加载此目录下的所有 skill。注意：不要留在项目的 `.claude/skills/` 里就完事了——全局 skill 要放在全局目录。
+- **Codex（OpenAI Codex CLI）**：复制到 Codex 在本设备上的配置目录（通常是 `~/.config/codex/skills/` 或 Codex 约定的其他全局路径）。
+- **其他平台**：原理一样——skill 定义文件要放到该平台在此设备上的全局 skills/agent 目录，而非某个具体项目内。
+
+> 本项目自带的 `.claude/skills/auto-exam-solver.md` 是 skill 的源文件。安装时从这里**拷贝**到全局目录。如果全局目录已有同名 skill 且版本更新，跳过此步。
 
 ### 第二步：让 skill 的脚本能跑
 
@@ -37,7 +41,7 @@ Skill 文件里声明了三个 Python 脚本：`browser_setup.py`、`page_prober
 - **Python 依赖**：playwright 和 websocket-client 这两个第三方库
 - **Chromium 浏览器**：由 playwright 管理，需要单独下载
 
-另外，最好用 pip 以开发模式安装本项目（`pip install -e .`），这样脚本可以在任意路径被调用，skill 和命令行工具都能正常工作。
+首先用 pip 以开发模式安装本项目（在项目根目录执行 `pip install -e .`），这样脚本会被注册到系统 PATH，skill 在全局目录也能找到它们。
 
 ### 安装前先看一眼
 
@@ -56,7 +60,7 @@ Skill 文件里声明了三个 Python 脚本：`browser_setup.py`、`page_prober
 - 在终端跑一下 `auto-exam-browser` 或 `python -m auto_exam_solver browser`，有正常输出就是装好了
 - 在平台里触发 skill（比如对 Claude Code 说"帮我做这个考试题"），看 skill 是否能被唤起
 
-如果平台能识别 skill 且脚本能跑，安装就完成了。
+如果平台在全局目录能识别 skill 且脚本能跑，安装就完成了。
 
 ---
 

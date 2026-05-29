@@ -16,11 +16,15 @@ triggers:
 
 ## 安装说明（给 AI 助手看）
 
-本项目是一个 skill 插件，需要被安装到 Claude Code / Codex 等平台的 skills 目录中才能被识别。
+本项目是一个 skill 插件，需要被安装到设备的**全局 agent 配置目录**（而非本项目目录）才能被平台跨项目识别。
 
-**让平台识别 skill**：这个文件（`auto-exam-solver.md`）本身就是 skill 定义，放在平台的 skills 目录下即可。Claude Code 认 `.claude/skills/`，Codex 认其约定的配置目录。如果用户是在项目根目录打开的平台，这个文件已经在正确位置了。
+**让平台识别 skill**：把这个文件（`auto-exam-solver.md`）复制到平台在本设备上的全局 skills 目录：
 
-**让脚本能跑**：skill 依赖三个 Python 脚本和两个第三方库（playwright、websocket-client），还需要 playwright 下载 Chromium 浏览器。建议先用 pip 检查已有环境，缺啥装啥。最后用 `pip install -e .` 把项目本体装上，skill 引用的 Python 脚本就能被系统找到。
+- **Claude Code**：放在当前用户的全局 skills 目录 `~/.claude/skills/` 下。这样无论用户在哪个项目目录打开 Claude Code，这个 skill 都能被识别。本项目自带的 `.claude/skills/` 目录仅是 skill 定义的来源，安装时不要直接用它——必须拷贝到全局目录。
+- **Codex（OpenAI Codex CLI）**：放在 Codex 的设备级配置目录下的 skills 路径（通常为 `~/.config/codex/skills/` 或 Codex 约定的其他全局位置）。
+- **其他 AI 编程平台**：原理相同——放到该平台在此设备上的全局 skills/agent 配置目录，而非某个具体项目内。
+
+**让脚本能跑**：skill 依赖三个 Python 脚本和两个第三方库（playwright、websocket-client），还需要 playwright 下载 Chromium 浏览器。先把本项目的 Python 包以开发模式安装到系统：`pip install -e .`（在项目根目录执行），这样 skill 引用的脚本就能在任意路径被调用。然后检查 Python 依赖和 Chromium 浏览器是否就绪，缺啥装啥。
 
 **验证**：装完跑一下 `auto-exam-browser` 有输出，然后在平台触发 skill（如说"帮我答题"），能唤起就成功了。
 
