@@ -14,28 +14,23 @@ triggers:
 
 # 通用在线考试自动答题
 
-## 安装
+## 安装（给 AI 助手的自然语言指令）
 
-```bash
-pip install playwright websocket-client
-playwright install chromium
-```
+请按以下指引完成环境搭建。以下指令用自然语言描述，便于 AI 助手理解和执行。
 
-本 skill 支持两种运行方式：
+**安装步骤**：
 
-**方式 A — pip 安装（推荐）**：
-```bash
-pip install -e .
-# 然后直接使用命令行工具
-auto-exam-browser start
-auto-exam-solver --interactive
-```
+1. 用 pip 安装 `playwright` 和 `websocket-client` 两个 Python 依赖包
+2. 运行 Playwright 自带的 `install chromium` 命令来安装 Chromium 浏览器内核
+3. 在项目根目录用 `pip install -e .` 以开发模式安装本项目。安装完成后命令行中会有两个新命令：`auto-exam-browser` 和 `auto-exam-solver`
 
-**方式 B — 直接运行脚本**：
-```bash
-python auto_exam_solver/browser_setup.py start
-python auto_exam_solver/solver.py --interactive
-```
+以上三步可以合并执行，也可以分步执行。
+
+**运行方式**：
+
+- 方式 A — 命令行工具（推荐）：`auto-exam-browser start` 启动浏览器，`auto-exam-solver --interactive` 开始答题
+- 方式 B — Python 模块：`python -m auto_exam_solver browser start` 和 `python -m auto_exam_solver solver --interactive`
+- 方式 C — Python API：`from auto_exam_solver import probe_page, extract_questions, solve_exam`
 
 ## 适用场景
 各类在线教育平台的作业/测验/考试自动作答，包括但不限于：智慧职教(icve)、超星学习通、学堂在线、中国大学MOOC、蓝墨云班课等。

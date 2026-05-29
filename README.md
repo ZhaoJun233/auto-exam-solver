@@ -12,65 +12,56 @@
 
 ---
 
-## 🤖 Agent 一键安装
+## 🤖 Agent 一键安装（给 AI 助手的自然语言指令）
 
-本项目支持 AI Agent（Claude Code、Cursor、Copilot 等）直接执行安装与调用。
+如果你是一个 AI 编程助手（如 Claude Code、Cursor、Copilot 等），请阅读以下指令并自动完成安装。这些指令用自然语言写成，方便你理解和执行。
 
-### 一键安装命令
+### 安装指令
 
-Agent 只需执行以下命令即可完成安装：
+请在项目根目录依次完成以下三件事：
 
-```bash
-pip install playwright websocket-client && playwright install chromium && pip install -e .
-```
+1. **安装 Python 依赖**：用 pip 安装 `playwright` 和 `websocket-client` 这两个包
+2. **安装浏览器内核**：运行 Playwright 自带的浏览器安装命令，安装 Chromium 浏览器
+3. **安装本项目**：用 pip 的开发模式（`-e .`）安装当前目录，这样 `auto-exam-solver` 和 `auto-exam-browser` 两个命令就可以在任意路径下直接使用了
 
-或者分步执行：
+以上三步可以合并成一行命令执行，也可以逐步执行。
 
-```bash
-# Step 1: 安装 Python 依赖
-pip install playwright websocket-client
+### 可用的命令行工具
 
-# Step 2: 安装 Chromium 浏览器
-playwright install chromium
+安装完成后，系统中会多出两个全局命令：
 
-# Step 3: 安装本包（开发模式，可被任意路径引用）
-pip install -e .
-```
+- `auto-exam-browser` — 浏览器管理工具，子命令包括：
+  - `start`：关闭当前 Chrome 并带调试端口重启（端口 9222）
+  - `connect`：检查 CDP 连接状态，列出已打开的页面
+  - `cookies`：导出浏览器 Cookie 为 JSON 格式
+  - `restart`：仅重启 Chrome，不重新复制用户配置
 
-安装完成后，Agent 可直接调用以下命令：
+- `auto-exam-solver` — 答题引擎，主要参数：
+  - `--cdp http://localhost:9222` 指定 Chrome DevTools Protocol 连接地址
+  - `--url <考试页面URL>` 直接打开目标考试页面
+  - `--interactive` 开启交互模式，逐题询问答案
+  - `--probe-only` 仅侦查页面结构，不实际答题
+  - `--questions-file result.json` 将提取到的题目保存为 JSON 文件
+  - `--cookies cookies.json` 使用已保存的 Cookie 文件新建浏览器会话
 
-| 命令 | 功能 |
-|------|------|
-| `auto-exam-browser start` | 启动带调试端口的 Chrome |
-| `auto-exam-browser connect` | 检查 CDP 连接状态 |
-| `auto-exam-browser cookies` | 导出 Cookie 为 JSON |
-| `auto-exam-solver --cdp http://localhost:9222 --interactive` | 交互式答题 |
-| `auto-exam-solver --cdp http://localhost:9222 --probe-only` | 仅页面侦查 |
-| `python -m auto_exam_solver solver --interactive` | 模块方式调用 |
+也可以用 `python -m auto_exam_solver solver` 和 `python -m auto_exam_solver browser` 通过模块方式调用。
 
-### Agent 调用示例
+### Agent 作为 Python 库调用
+
+如果需要更灵活的控制，可以直接 import 本包的核心 API：
 
 ```python
-# Agent 作为 Python 库直接调用
 import asyncio
 from auto_exam_solver import probe_page, extract_questions, solve_exam
 
+# 连接 CDP 浏览器 → 侦查页面 → 提取题目 → 作答
 async def auto_solve():
-    # 连接 CDP 浏览器
     from playwright.async_api import async_playwright
     async with async_playwright() as p:
         browser = await p.chromium.connect_over_cdp("http://localhost:9222")
         page = browser.contexts[0].pages[0]
-
-        # 侦查页面
         info = await probe_page(page)
-        print(f"框架: {info.framework}, UI: {info.ui_library}")
-
-        # 提取题目
         questions = await extract_questions(page, info.framework)
-        print(f"共 {len(questions)} 道题")
-
-        # 作答（需要先填入正确答案）
         await solve_exam(page, questions, info, interactive=True)
 
 asyncio.run(auto_solve())
