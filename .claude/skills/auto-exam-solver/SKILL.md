@@ -18,15 +18,35 @@ triggers:
 
 本项目是一个 skill 插件，需要被安装到设备的**全局 agent 配置目录**（而非本项目目录）才能被平台跨项目识别。
 
-**让平台识别 skill**：把这个文件（`auto-exam-solver.md`）复制到平台在本设备上的全局 skills 目录：
+### Skill 文件的格式要求
 
-- **Claude Code**：放在当前用户的全局 skills 目录 `~/.claude/skills/` 下。这样无论用户在哪个项目目录打开 Claude Code，这个 skill 都能被识别。本项目自带的 `.claude/skills/` 目录仅是 skill 定义的来源，安装时不要直接用它——必须拷贝到全局目录。
-- **Codex（OpenAI Codex CLI）**：放在 Codex 的设备级配置目录下的 skills 路径（通常为 `~/.config/codex/skills/` 或 Codex 约定的其他全局位置）。
-- **其他 AI 编程平台**：原理相同——放到该平台在此设备上的全局 skills/agent 配置目录，而非某个具体项目内。
+Skill 不是单文件，必须遵循 **目录 + SKILL.md** 结构：
 
-**让脚本能跑**：skill 依赖三个 Python 脚本和两个第三方库（playwright、websocket-client），还需要 playwright 下载 Chromium 浏览器。先把本项目的 Python 包以开发模式安装到系统：`pip install -e .`（在项目根目录执行），这样 skill 引用的脚本就能在任意路径被调用。然后检查 Python 依赖和 Chromium 浏览器是否就绪，缺啥装啥。
+```
+<skill名称>/
+└── SKILL.md    # 文件名必须是 SKILL.md
+```
 
-**验证**：装完跑一下 `auto-exam-browser` 有输出，然后在平台触发 skill（如说"帮我答题"），能唤起就成功了。
+本项目源文件位于 `.claude/skills/auto-exam-solver/SKILL.md`，安装时要把整个 `auto-exam-solver/` 目录拷贝到全局位置，确保目录下的文件名叫 `SKILL.md`（不是其他名字）。
+
+### 让平台识别 skill
+
+- **Claude Code**：有两种方式——
+  - *推荐*：将 `auto-exam-solver/` 目录拷贝到 `~/.agents/skills/`，然后在 `~/.claude/skills/` 下创建符号链接指向它：`ln -s ~/.agents/skills/auto-exam-solver ~/.claude/skills/auto-exam-solver`
+  - *备选*：直接将 `auto-exam-solver/` 目录拷贝到 `~/.claude/skills/` 下
+  - 无论哪种方式，结果都是 `~/.claude/skills/auto-exam-solver/SKILL.md` 这个路径。Claude Code 启动时自动加载此目录下的所有 skill，跨项目生效。
+- **Codex（OpenAI Codex CLI）**：将 `auto-exam-solver/` 目录拷贝到 Codex 在本设备上的全局 skills 路径（通常为 `~/.config/codex/skills/`），确保 `SKILL.md` 在目录内。
+- **其他 AI 编程平台**：原理相同——到该平台在此设备上的全局 skills/agent 配置目录下，创建 `<skill名称>/SKILL.md` 的目录结构。
+
+> 本项目自带的 `.claude/skills/auto-exam-solver/` 是 skill 的源目录。安装时从这里**拷贝**到全局位置。如果全局位置已有同名 skill 且版本更新，跳过此步。
+
+### 让脚本能跑
+
+skill 依赖三个 Python 脚本和两个第三方库（playwright、websocket-client），还需要 playwright 下载 Chromium 浏览器。先把本项目的 Python 包以开发模式安装到系统：`pip install -e .`（在项目根目录执行），这样 skill 引用的脚本就能在任意路径被调用。然后检查 Python 依赖和 Chromium 浏览器是否就绪，缺啥装啥。
+
+### 验证
+
+装完跑一下 `auto-exam-browser` 有输出，然后在平台触发 skill（如说"帮我答题"），能唤起就成功了。
 
 **运行方式**：
 

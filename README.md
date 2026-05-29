@@ -24,15 +24,31 @@
 
 本项目自带的 `.claude/skills/` 目录只是 skill 定义的**来源**。安装时，不要把用户的项目目录当成安装目标——你要把 skill 文件复制到平台在**本设备上的全局 agent 配置目录**。这样用户在任何项目中都能唤起这个 skill，而不需要每个项目都拷一份。
 
-### 第一步：把 skill 定义放到平台全局目录
+### Skill 格式要求
 
-`auto-exam-solver.md`（位于本项目 `.claude/skills/` 下）是 skill 的身份文件，用 YAML 写了 skill 名称、触发条件、依赖的脚本列表。你需要把它放到平台能全局发现的地方：
+Skill 不是随意命名的单文件，必须遵循固定格式：
 
-- **Claude Code**：复制到 `~/.claude/skills/`（用户级全局 skills 目录）。Claude Code 启动时会自动加载此目录下的所有 skill。注意：不要留在项目的 `.claude/skills/` 里就完事了——全局 skill 要放在全局目录。
-- **Codex（OpenAI Codex CLI）**：复制到 Codex 在本设备上的配置目录（通常是 `~/.config/codex/skills/` 或 Codex 约定的其他全局路径）。
-- **其他平台**：原理一样——skill 定义文件要放到该平台在此设备上的全局 skills/agent 目录，而非某个具体项目内。
+```
+<skill名称>/
+└── SKILL.md      ← 文件名必须是 SKILL.md，不能是别的
+```
 
-> 本项目自带的 `.claude/skills/auto-exam-solver.md` 是 skill 的源文件。安装时从这里**拷贝**到全局目录。如果全局目录已有同名 skill 且版本更新，跳过此步。
+本项目源文件位于 `.claude/skills/auto-exam-solver/SKILL.md`——即目录 `auto-exam-solver/` 下包含 `SKILL.md`。
+
+### 第一步：把 skill 目录放到平台全局位置
+
+把整个 `auto-exam-solver/` 目录（含 `SKILL.md`）拷贝到全局 skills 目录：
+
+- **Claude Code**（推荐方式）：拷贝到 `~/.agents/skills/auto-exam-solver/`，然后创建符号链接：
+  ```bash
+  cp -r .claude/skills/auto-exam-solver ~/.agents/skills/
+  ln -s ~/.agents/skills/auto-exam-solver ~/.claude/skills/auto-exam-solver
+  ```
+  备选方式：直接拷贝到 `~/.claude/skills/auto-exam-solver/`（跳过符号链接）。无论哪种，最终路径必须是 `~/.claude/skills/auto-exam-solver/SKILL.md`。
+- **Codex（OpenAI Codex CLI）**：拷贝到 Codex 在本设备上的全局配置目录（通常为 `~/.config/codex/skills/auto-exam-solver/SKILL.md`）。
+- **其他平台**：原理一样——在该平台此设备上的全局 skills/agent 目录下创建 `auto-exam-solver/SKILL.md` 结构。
+
+> 本项目 `.claude/skills/auto-exam-solver/` 是源目录。安装时从这里**拷贝**。如果全局位置已有同名 skill 且版本更新，跳过此步。
 
 ### 第二步：让 skill 的脚本能跑
 
@@ -165,7 +181,8 @@ auto-exam-solver/
 │   ├── page_prober.py          # 页面侦查（框架识别/题目提取/选择器映射）
 │   └── solver.py               # 主引擎（CLI入口，完整答题流程）
 ├── .claude/skills/
-│   └── auto-exam-solver.md     # Claude Code skill 定义
+│   └── auto-exam-solver/
+│       └── SKILL.md            # Claude Code skill 定义（全局安装源）
 ├── pyproject.toml              # pip install 配置
 ├── requirements.txt            # Python 依赖
 ├── .gitignore
