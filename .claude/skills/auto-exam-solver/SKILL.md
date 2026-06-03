@@ -1,7 +1,7 @@
 ---
 name: auto-exam-solver
 description: 通用在线考试/作业自动答题助手。支持各类教育平台（智慧职教、超星、学堂在线等），自适应 Vue/React/原生 HTML。处理验证码绕过、题目提取、答案选择与提交。
-version: 2.0.0
+version: 2.1.0
 scripts:
   - auto_exam_solver/browser_setup.py   # 浏览器接入：关闭/重启 Chrome、复制 profile、导出 Cookie
   - auto_exam_solver/page_prober.py     # 页面侦查：框架识别、题目提取、UI 选择器映射
@@ -11,6 +11,51 @@ triggers:
   - 用户分享在线教育平台的作业/考试页面 URL
   - 页面包含题目内容且用户要求作答
 ---
+
+# ⛔ 核心原则：禁止使用 MCP 操作考试页面
+
+**绝对不要使用 MCP chrome_devtools 系列工具操作考试/作业页面。** MCP 工具会引入独立的浏览器会话或自动化标志，触发教育平台的验证码/反作弊检测，导致：
+
+- 滑块验证码反复弹出无法通过
+- 平台检测到自动化行为并封禁账号
+- 操作超时或页面状态不一致
+
+## 唯一正确的方式：Playwright CDP 连接用户真实浏览器
+
+本项目的全部页面交互必须通过 **Playwright CDP** 完成：
+
+```
+用户日常 Chrome ──(CDP 9222端口)──> Playwright ──> Python 脚本
+```
+
+这等价于在用户已登录、已解锁的浏览器中直接执行 JavaScript，**不引入任何自动化标志**。
+
+## 操作分工
+
+| 操作类型 | 正确工具 | 禁止工具 |
+|---------|---------|---------|
+| 启动/管理浏览器 | auto-exam-browser CLI | — |
+| 页面探测、题目提取 | auto-exam-solver Python 脚本 | MCP snapshot/evaluate |
+| 点击选项、翻页、提交 | auto-exam-solver Python 脚本 | MCP click/fill/navigate |
+| 打开新标签页查看其他网站 | MCP navigate_page（非考试页） | — |
+| 截图辅助调试 | MCP take_screenshot（仅调试用） | MCP take_snapshot |
+
+## 执行流程
+
+1. 告诉用户运行 auto-exam-browser start 启动调试模式 Chrome
+2. 用户在浏览器中手动登录平台、进入考试页面、完成验证码（如有）
+3. 运行 auto-exam-solver --cdp http://localhost:9222 --interactive 开始答题
+4. **全程通过 Python 脚本的 Playwright CDP 操控浏览器，不经过 MCP**
+
+## 如果用户在 Codex 中触发此 skill
+
+当用户说"帮我答题"、"自动做作业"等触发此 skill 时：
+- **不要**尝试用 MCP 工具读取页面、点击元素或填写表单
+- **应该**调用 Python 脚本（auto-exam-solver CLI 或 auto_exam_solver 模块）完成所有浏览器操作
+- 如果需要查看页面状态，用 auto-exam-solver --probe-only 而不是 MCP snapshot
+
+---
+
 
 # 通用在线考试自动答题
 
@@ -199,3 +244,16 @@ Bootstrap:  .form-check-input (原生 input)
 - 不要在正式考试/证书考试中使用
 - 不同平台有不同反作弊机制，CDP 模式比 `chromium.launch()` 更难检测
 - 频繁操作可能触发平台限流，每题之间等待 1-2 秒
+
+
+## 验证码处理策略
+
+当页面检测到验证码时（腾讯滑块、极验、图形验证码等），本工具会自动暂停并提示用户手动处理。具体流程：
+
+1. 答题过程中自动检测验证码弹窗
+2. 检测到后暂停自动操作，打印提示信息
+3. 用户在浏览器中手动完成验证码
+4. 用户在终端按回车继续
+5. 工具自动恢复答题流程
+
+**重要**：验证码的触发频率与操作方式直接相关。使用 Playwright CDP 操作用户真实浏览器（无 webdriver 标志）时，验证码触发率远低于 MCP 工具或 Selenium。

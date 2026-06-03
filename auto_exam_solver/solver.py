@@ -1,4 +1,4 @@
-"""
+﻿"""
 通用考试自动作答引擎。
 
 Usage:
@@ -18,7 +18,6 @@ Usage:
 import asyncio
 import argparse
 import json
-import time
 from dataclasses import asdict
 
 from playwright.async_api import async_playwright, Page
@@ -107,12 +106,6 @@ async def select_option(page: Page, question: Question, info: PageInfo) -> bool:
         else RADIO_SELECTORS.get(ui, RADIO_SELECTORS["native"])
     )
 
-    for opt in question.options:
-        if not opt.is_correct and opt.is_correct is not None:
-            continue
-        if not opt.is_correct and opt.is_correct is None:
-            continue
-
     # 尝试选中目标选项
     for opt in question.options:
         if not opt.is_correct:
@@ -125,10 +118,17 @@ async def select_option(page: Page, question: Question, info: PageInfo) -> bool:
                 await inputs.nth(idx).click()
                 await asyncio.sleep(1)
                 return True
-            # 备选：点击 label wrapper
-            wrappers = page.locator(
-                selector.replace("-input", "-wrapper").replace("-original", "").replace('input[type="radio"]', '.ivu-radio-wrapper')
-            )
+
+            # 备选：点击 label wrapper（各组件库适配）
+            wrapper_map = {
+                "iview": ".ivu-radio-wrapper",
+                "element": ".el-radio",
+                "antd": ".ant-radio-wrapper",
+                "bootstrap": ".form-check",
+                "native": "label",
+            }
+            wrapper_sel = wrapper_map.get(ui, "label")
+            wrappers = page.locator(wrapper_sel)
             w_count = await wrappers.count()
             if idx < w_count:
                 await wrappers.nth(idx).click()
@@ -137,17 +137,102 @@ async def select_option(page: Page, question: Question, info: PageInfo) -> bool:
         except Exception as e:
             print(f"  [WARN] 选项 {opt.label} 点击失败: {e}")
     return False
+# ─── Captcha Detection ──────────────────────────────────────────────
+
+CAPTCHA_CSS_SELECTORS = [
+    '#tCaptchaDyContent',
+    '#captcha',
+    '.captcha-container',
+    '.geetest_panel',
+    '.tencent-captcha',
+    '.verify-code',
+    '.verification',
+    '[class*="captcha"]',
+    '[class*="verify"]',
+    '[id*="captcha"]',
+    '[id*="verify"]',
+]
+
+CAPTCHA_TEXT_KEYWORDS = [
+    "安全验证", "拖动滑块", "拼图完成验证", "请完成安全验证",
+    "captcha", "verify", "slider", "请点击", "请拖动",
+    "识别图中", "输入验证码", "验证码", "滑块验证",
+    "人机验证", "行为验证", "机器人",
+]
+
+
+async def check_captcha_visible(page: Page) -> bool:
+    """检测页面上是否有验证码弹窗。返回 True 表示需要用户手动处理。"""
+    try:
+        for selector in CAPTCHA_CSS_SELECTORS:
+            elem = page.locator(selector).first
+            if await elem.count() > 0 and await elem.is_visible():
+                return True
+
+        for selector in [
+            '.ivu-modal-wrap:not(.ivu-modal-hidden)',
+            '.el-dialog:not([style*="display: none"])',
+            '.ant-modal:not([style*="display: none"])',
+            '.modal', '.dialog', '.overlay']:
+            try:
+                modal = page.locator(selector).first
+                if await modal.count() > 0 and await modal.is_visible():
+                    text = (await modal.text_content() or "").strip()
+                    if any(kw in text for kw in CAPTCHA_TEXT_KEYWORDS):
+                        return True
+            except Exception:
+                continue
+
+        body_text = await page.evaluate(
+            "() => document.body?.innerText?.substring(0, 2000) || ''"
+        )
+        critical_kw = ["拖动滑块", "拼图完成", "安全验证", "请完成安全验证"]
+        if any(kw in body_text for kw in critical_kw):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+async def wait_for_captcha_resolution(page: Page, context: str = "") -> bool:
+    """检测到验证码后暂停，等待用户手动完成。返回 True 表示继续，False 表示放弃。"""
+    print(f"\n{'='*60}")
+    print(f"WARNING: captcha detected! ({context})")
+    print(f"{'='*60}")
+    print("Please manually complete the captcha in the browser.")
+    print("Press Enter to continue, or type 'q' to abort.")
+    print(f"{'='*60}")
+
+    while True:
+        user_input = input(">>> ").strip().lower()
+        if user_input in ['', 'y', 'yes']:
+            await asyncio.sleep(1)
+            still_captcha = await check_captcha_visible(page)
+            if still_captcha:
+                print("Captcha still appears present. Press Enter to retry, or 'f' to force.")
+                force = input(">>> ").strip().lower()
+                if force == 'f':
+                    print("Force continuing...")
+                    return True
+                continue
+            print("Captcha cleared, resuming...")
+            return True
+        elif user_input in ['q', 'quit', 'exit']:
+            print("User aborted")
+            return False
+        else:
+            print("Type 'y' to continue / 'q' to abort")
 
 
 # ─── Submit ─────────────────────────────────────────────────────────
 
 async def submit_exam(page: Page) -> bool:
     """点击交卷并确认。"""
-    # 先关闭可能的验证码弹窗
-    await page.evaluate("""
-        const captcha = document.querySelector('#tCaptchaDyContent');
-        if (captcha) captcha.style.display = 'none';
-    """)
+    # 提交前检测验证码
+    if await check_captcha_visible(page):
+        ok = await wait_for_captcha_resolution(page, "before submit")
+        if not ok:
+            return False
 
     # 点击交卷
     for selector in SUBMIT_SELECTORS:
@@ -163,6 +248,13 @@ async def submit_exam(page: Page) -> bool:
 
     await asyncio.sleep(2)
 
+
+    # 检测交卷后可能出现的验证码
+    if await check_captcha_visible(page):
+        ok = await wait_for_captcha_resolution(page, "after submit click")
+        if not ok:
+            print("  [WARN] 用户放弃，提交可能未完成")
+            return False
     # 确认弹窗
     for selector in CONFIRM_SELECTORS:
         try:
@@ -213,6 +305,13 @@ async def solve_exam(
             # 设置答案
             for o in q.options:
                 o.is_correct = (o.label == user_input)
+
+        # 验证码检测（每题操作前）
+        if await check_captcha_visible(page):
+            ok = await wait_for_captcha_resolution(page, f"第{q.index}题前")
+            if not ok:
+                print(f"  跳过第{q.index}题")
+                continue
 
         # 导航
         await navigate_to_question(page, q.index, info)
@@ -286,6 +385,11 @@ async def main():
         info = await probe_page(page)
         print(f"\n框架: {info.framework} | UI: {info.ui_library} | 导航: {info.navigation}")
         print(f"验证码: {'有' if info.has_captcha else '无'} | 题目数: {info.question_count}")
+
+        # ── 验证码预检（侦查后发现验证码，提示用户先处理）──
+        if info.has_captcha:
+            print("\n[INFO] 页面存在验证码元素，请在浏览器中先完成验证码")
+            await wait_for_captcha_resolution(page, "页面侦查阶段")
 
         if args.probe_only:
             info_dict = asdict(info)

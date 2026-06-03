@@ -1,10 +1,10 @@
-[build-system]
+﻿[build-system]
 requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "auto-exam-solver"
-version = "2.0.0"
+version = "2.1.0"
 description = "通用在线考试/作业自动答题助手 — 支持各类教育平台，自适应 Vue/React/原生 HTML"
 readme = "README.md"
 license = {text = "MIT"}

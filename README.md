@@ -1,4 +1,4 @@
-# auto-exam-solver
+﻿﻿# auto-exam-solver
 
 通用在线考试/作业自动答题助手。支持主流教育平台，自适应前端框架，三步完成从浏览器接入到自动交卷。
 
@@ -165,10 +165,19 @@ auto-exam-solver --interactive
 | 方式 | webdriver 检测 | 验证码触发 | 推荐度 |
 |------|:---:|:---:|:---:|
 | CDP 连接日常 Chrome | 无 | 低 | ★★★★★ |
-| `chromium.launch()` | 有 | 高 | ★★★ |
+| chromium.launch() | 有 | 高 | ★★★ |
+| **MCP chrome_devtools** | **有（独立会话）** | **极高** | **✗ 禁止使用** |
 | Selenium | 有 | 高 | ★★ |
 
-CDP 模式连接的是你正常使用的 Chrome 浏览器，没有自动化标志，平台无法检测。
+
+### 禁止使用 MCP
+
+**绝对不要用 MCP chrome_devtools 工具操作考试页面。** MCP 工具会创建独立的浏览器会话，带有自动化标志，必然触发验证码。
+本项目的所有页面交互（点击、填写、导航、提取）必须通过 Playwright CDP 完成。
+验证码触发率对比：
+
+- **Playwright CDP 操作用户真实 Chrome**：几乎无 webdriver 标志，验证码触发率极低
+- **MCP chrome_devtools 工具**：每次操作都可能触发验证码，反复失败
 
 ## 项目结构
 
