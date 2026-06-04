@@ -45,7 +45,8 @@ triggers:
 1. 告诉用户运行 auto-exam-browser start 启动调试模式 Chrome
 2. 用户在浏览器中手动登录平台、进入考试页面、完成验证码（如有）
 3. 运行 auto-exam-solver --cdp http://localhost:9222 --interactive 开始答题
-4. **全程通过 Python 脚本的 Playwright CDP 操控浏览器，不经过 MCP**
+4. 如果遇到 auto 模式无法给用户答题的情况，请改为手动模式（`--interactive`）
+5. **全程通过 Python 脚本的 Playwright CDP 操控浏览器，不经过 MCP**
 
 ## 如果用户在 Codex 中触发此 skill
 
@@ -53,6 +54,7 @@ triggers:
 - **不要**尝试用 MCP 工具读取页面、点击元素或填写表单
 - **应该**调用 Python 脚本（auto-exam-solver CLI 或 auto_exam_solver 模块）完成所有浏览器操作
 - 如果需要查看页面状态，用 auto-exam-solver --probe-only 而不是 MCP snapshot
+- 如果 auto 模式无法给用户答题，请改为手动模式（`--interactive`）
 
 ---
 

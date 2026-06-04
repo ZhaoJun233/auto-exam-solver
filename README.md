@@ -111,6 +111,8 @@ auto-exam-browser start
 auto-exam-solver --interactive
 ```
 
+> 如果遇到 auto 模式无法给你答题的情况，请改为手动模式（`--interactive`）。
+
 引擎会：
 1. 自动识别页面框架和组件库
 2. 提取所有题目和选项
