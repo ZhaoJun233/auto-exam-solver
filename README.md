@@ -174,8 +174,8 @@ auto-exam-solver --interactive
 
 ### 禁止使用 MCP
 
-**绝对不要用 MCP chrome_devtools 工具操作考试页面。** MCP 工具会创建独立的浏览器会话，带有自动化标志，必然触发验证码。
-本项目的所有页面交互（点击、填写、导航、提取）必须通过 Playwright CDP 完成。
+**触发 auto-exam-solver 后，本轮浏览器相关操作一律不要使用 MCP chrome_devtools 工具。** 不要给“只是看一下页面”“只是截图”“只是非考试页”留下例外；这些例外会让模型优先走 MCP，最终触发验证码。
+本项目的所有页面交互（点击、填写、导航、提取、截图诊断）必须通过项目内 Python CLI + Playwright CDP 完成。
 验证码触发率对比：
 
 - **Playwright CDP 操作用户真实 Chrome**：几乎无 webdriver 标志，验证码触发率极低

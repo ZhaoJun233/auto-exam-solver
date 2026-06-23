@@ -1,7 +1,7 @@
 ---
 name: auto-exam-solver
-description: 通用在线考试/作业自动答题助手。支持各类教育平台（智慧职教、超星、学堂在线等），自适应 Vue/React/原生 HTML。处理验证码绕过、题目提取、答案选择与提交。
-version: 2.1.0
+description: 通用在线考试/作业自动答题助手。触发本技能后严禁使用任何 MCP/chrome_devtools 浏览器工具；必须通过 auto-exam-solver Python CLI + Playwright CDP 连接用户真实 Chrome 完成页面侦查、题目提取、点击、翻页和提交。
+version: 2.1.1
 scripts:
   - auto_exam_solver/browser_setup.py   # 浏览器接入：关闭/重启 Chrome、复制 profile、导出 Cookie
   - auto_exam_solver/page_prober.py     # 页面侦查：框架识别、题目提取、UI 选择器映射
@@ -12,49 +12,53 @@ triggers:
   - 页面包含题目内容且用户要求作答
 ---
 
-# ⛔ 核心原则：禁止使用 MCP 操作考试页面
+# ⛔ 硬性工具禁令：触发本 skill 后禁止任何 MCP 浏览器工具
 
-**绝对不要使用 MCP chrome_devtools 系列工具操作考试/作业页面。** MCP 工具会引入独立的浏览器会话或自动化标志，触发教育平台的验证码/反作弊检测，导致：
+当本 skill 被触发后，**本轮对话中的浏览器相关操作一律不得使用 MCP**。不要给自己留下“只是看一下页面”“只是截图”“只是非考试页”的例外；这些例外会让模型优先走 MCP，最终导致验证码反复弹出。
 
-- 滑块验证码反复弹出无法通过
-- 平台检测到自动化行为并封禁账号
-- 操作超时或页面状态不一致
+## 禁止清单
 
-## 唯一正确的方式：Playwright CDP 连接用户真实浏览器
+以下工具和同类能力全部禁止使用：
 
-本项目的全部页面交互必须通过 **Playwright CDP** 完成：
+- `mcp__chrome_devtools__*`
+- `chrome_devtools` / Chrome DevTools MCP
+- `navigate_page`
+- `take_snapshot`
+- `take_screenshot`
+- `click`
+- `fill`
+- `evaluate_script`
+- 任何通过 MCP 读取、点击、填写、截图、跳转浏览器页面的操作
+
+如果你已经准备调用 MCP 浏览器工具，必须立刻停止，改为调用本项目的 Python CLI。
+
+## 唯一允许的浏览器操作方式
+
+本项目的全部页面交互必须通过 **项目内 Python 脚本 + Playwright CDP** 完成：
 
 ```
-用户日常 Chrome ──(CDP 9222端口)──> Playwright ──> Python 脚本
+用户日常 Chrome ──(CDP 9222端口)──> Playwright ──> auto-exam-solver Python 脚本
 ```
 
-这等价于在用户已登录、已解锁的浏览器中直接执行 JavaScript，**不引入任何自动化标志**。
+这等价于在用户已登录、已解锁的真实浏览器中直接执行操作，避免 MCP 独立会话或自动化标志触发验证码。
 
-## 操作分工
+## 正确执行流程
 
-| 操作类型 | 正确工具 | 禁止工具 |
-|---------|---------|---------|
-| 启动/管理浏览器 | auto-exam-browser CLI | — |
-| 页面探测、题目提取 | auto-exam-solver Python 脚本 | MCP snapshot/evaluate |
-| 点击选项、翻页、提交 | auto-exam-solver Python 脚本 | MCP click/fill/navigate |
-| 打开新标签页查看其他网站 | MCP navigate_page（非考试页） | — |
-| 截图辅助调试 | MCP take_screenshot（仅调试用） | MCP take_snapshot |
+1. 运行 `auto-exam-browser start` 启动调试模式 Chrome。
+2. 让用户在真实 Chrome 中手动登录平台、进入考试页面、完成验证码（如有）。
+3. 运行 `auto-exam-solver --cdp http://localhost:9222 --interactive` 开始答题。
+4. 如果只需要查看页面状态，运行 `auto-exam-solver --probe-only`。
+5. 如果自动模式无法答题，改为 `--interactive` 手动确认答案。
+6. **全程不得调用任何 MCP 浏览器工具。**
 
-## 执行流程
+## Codex 执行规则
 
-1. 告诉用户运行 auto-exam-browser start 启动调试模式 Chrome
-2. 用户在浏览器中手动登录平台、进入考试页面、完成验证码（如有）
-3. 运行 auto-exam-solver --cdp http://localhost:9222 --interactive 开始答题
-4. 如果遇到 auto 模式无法给用户答题的情况，请改为手动模式（`--interactive`）
-5. **全程通过 Python 脚本的 Playwright CDP 操控浏览器，不经过 MCP**
+当用户说“帮我答题”“自动做作业”“继续答题”等触发此 skill 时：
 
-## 如果用户在 Codex 中触发此 skill
-
-当用户说"帮我答题"、"自动做作业"等触发此 skill 时：
-- **不要**尝试用 MCP 工具读取页面、点击元素或填写表单
-- **应该**调用 Python 脚本（auto-exam-solver CLI 或 auto_exam_solver 模块）完成所有浏览器操作
-- 如果需要查看页面状态，用 auto-exam-solver --probe-only 而不是 MCP snapshot
-- 如果 auto 模式无法给用户答题，请改为手动模式（`--interactive`）
+- 第一动作应该是运行 `auto-exam-browser connect` 或 `auto-exam-solver --probe-only`，不是打开 MCP。
+- 页面侦查、题目提取、点击选项、翻页、提交都必须由 `auto-exam-solver` 脚本完成。
+- 需要截图或状态诊断时，也用 Python/Playwright CDP 脚本输出信息，不使用 MCP 截图。
+- 如果发现验证码，暂停并让用户在真实 Chrome 手动完成，然后继续脚本。
 
 ---
 
